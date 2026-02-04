@@ -38,6 +38,21 @@ A hands-on cyber security lab that simulates a brute-force/dictionary attack aga
 - **Target (Windows 10 server):** `192.168.0.1`
 - **Attacker (Kali Linux):** `192.168.0.3`
 
+## 🧱 Security Architecture Overview (Mermaid)
+
+flowchart LR
+
+  A (Kali Linux\nAttacker) -->|Scan & Login Attempts| B(Windows 10\nRDP Service)
+
+  B -->|Failed Logins| C[IPBan]
+
+  C -->|Auto Block| D[Windows Firewall]
+
+  D -->|Traffic Blocked| A
+
+  ---
+
+
 # (A) Install Kali Linux on Hyper-V (Attacker VM)
 
 To install Kali Linux on Hyper-V (Draft), you can follow these steps:       
@@ -260,17 +275,103 @@ Evidence appears in:
 ✅ Defensive tuning improved responsiveness by reducing ban threshold
 
 ---
-# 🔐 Security Notes & Improvements
+## 🔹 Formal / Academic
 
-- Prefer strong passwords + account lockout policies
+IPBan is an open-source intrusion prevention and brute-force protection tool designed to automatically block malicious IP addresses after repeated failed authentication attempts.
+What IPBan Does
 
-- Consider MFA for RDP access
+IPBan continuously monitors system and application logs (primarily on Windows, but also supported on Linux) to detect patterns that indicate brute-force or credential-stuffing attacks. When a configurable threshold of failed login attempts is reached, IPBan automatically bans the offending IP address by creating firewall rules.
+---
 
-- Limit RDP exposure to VPN / jump box only
+# Where IPBan Fits in a SOC / SIEM Architecture
 
-- Use allowlisting + geo/IP reputation controls where possible
+IPBan operates at the endpoint and network enforcement layer of a SOC architecture, providing automated, near-real-time response to brute-force and credential-based attacks.
 
-- Centralize logs (SIEM) for correlation across endpoints
+1. Position in the Security Stack
+
+In a typical SOC/SIEM model, IPBan sits between log generation and network control, complementing SIEM rather than replacing it:
+
+[Endpoints / Servers]
+        
+        ↓
+
+[Event Logs (Auth Failures)]
+        
+        ↓
+
+[IPBan – Local Detection & Response]
+        
+        ↓
+
+[Firewall Enforcement (Block IP)]
+        
+        ↓
+
+[SIEM / SOC Monitoring & Correlation]
+
+- Endpoints generate authentication and security events (e.g., Windows Event Logs for RDP failures)
+
+- IPBan consumes these logs locally
+
+- Firewall rules are dynamically updated to block malicious IPs
+
+- SIEM ingests logs and actions for visibility, correlation, and auditing
+
+---
+
+2. IPBan’s Role in the SOC
+
+IPBan functions as a lightweight Intrusion Prevention System (IPS) with automated response capabilities:
+
+SOC Function	IPBan Contribution
+Detection	Identifies repeated authentication failures
+Response	Automatically blocks attacker IPs
+Containment	Prevents further brute-force attempts
+Reduction of Noise	Stops alert storms at the source
+Endpoint Hardening	Adds protection close to the asset
+
+IPBan is particularly effective against high-volume, low-sophistication attacks (e.g., internet-wide RDP scans).
+
+3. Relationship to SIEM
+
+IPBan does not replace a SIEM. Instead, it:
+
+- Acts before alerts escalate to Tier-1 SOC analysts
+
+- Reduces false positives and alert fatigue
+
+- Provides enrichment data (ban events, attacker IPs)
+
+- Supports automated response in environments without SOAR
+
+In mature SOCs:
+
+- IPBan events are forwarded to the SIEM
+
+- Analysts review bans, trends, and repeat offenders
+
+- SIEM correlates IPBan actions with other telemetry (EDR, IDS, cloud logs)
+
+4. Comparison to Other SOC Components
+Tool	Purpose
+SIEM	Centralised logging, correlation, alerting
+SOAR	Orchestrated, multi-system response
+EDR	Endpoint behaviour detection
+IDS/IPS	Network traffic inspection
+IPBan	Endpoint-level brute-force prevention
+
+IPBan is best described as local, automated containment.
+
+5. Why SOC Teams Use IPBan
+
+- Fast response without human intervention
+
+- Low operational overhead
+
+- Strong control for exposed services (RDP, SSH)
+
+- Ideal for SMBs, hybrid environments, and edge systems
+
 
 
 
